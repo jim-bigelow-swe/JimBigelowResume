@@ -4,4 +4,6 @@ JimBigelowResume::Application.routes.draw do
 
   root :to => 'home#index'
 
+  match  "/resume" => "resume#stream_as_pdf"
+
 end
