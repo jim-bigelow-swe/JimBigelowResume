@@ -106,16 +106,15 @@ Portland State University, Portland, Oregon}
     end
   end
   describe "Get index?Puzzle" do
-    it 'should accept the parameter Puzzle' do
-      get 'index', {:q => "Puzzle"}
+    before(:each) do
+      @test_data = {:puzzle => {"q"=>"Puzzle", "d"=>"Please solve this puzzle:\n ABCD\nA-->-\nB>---\nC--=-\nD--<-\n"}, :solution => "\n ABCD\nA=<>>\nB>=>>\nC<<=>\nD<<<=\n"}
     end
-    it 'should respond Puzzle solution' do
-      get 'index', {:q => "Puzzle"}
-      response.body.should == %q{ ABCD
-A=<>>
-B>=>>
-C<<=>
-D<<<=}
+    it 'should accept the parameter Puzzle' do
+      get 'index', @test_data[:puzzle]
+    end
+    it 'should respond with a Puzzle solution' do
+      get 'index', @test_data[:puzzle]
+      response.body.should == @test_data[:solution]
     end
   end
 end

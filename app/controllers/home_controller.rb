@@ -1,3 +1,13 @@
+require 'tsort'
+
+class Hash
+  include TSort
+  alias tsort_each_node each_key
+  def tsort_each_child(node, &block)
+    fetch(node).each(&block)
+  end
+end
+
 class HomeController < ApplicationController
   def index
     #debugger
@@ -40,14 +50,70 @@ Portland State University, Portland, Oregon}
       render :text => "Yes, I am a US citizen"
 
     elsif params[:q] =~ /Puzzle/
-      render :text => %q{ ABCD
-A=<>>
-B>=>>
-C<<=>
-D<<<=}
+      render :text => solve_puzzle(params[:d])
 
     else
       render :text => "OK"
     end
   end
+
+  def solve_puzzle(challenge)
+    puzzle = challenge.gsub("Please solve this puzzle:\n", "")
+    pieces = puzzle.split("\n")
+
+    letters =["", "A", "B", "C", "D"]
+    # construct the graph based in the challenge
+    graph = Hash.new
+    for i in 1..4
+      graph[letters[i]] = Array.new
+    end
+    pieces.each do |piece|
+      if piece =~ /^[A-D]/
+        letter = piece[0]
+        for i in 1..4
+          if piece[i] =~ /</
+            graph[letter] = graph[letter] << letters[i]
+          elsif piece[i] =~ />/
+            graph[letters[i]] = graph[letters[i]] << letter
+          end
+        end
+      end
+    end
+    # find the partial ordering using a toplogical sort
+    order = graph.tsort
+
+    # construct the solution, by filling in the blanks
+    solution = {
+      :title => " ABCD",
+      :A     => "A=   ",
+      :B     => "B =  ",
+      :C     => "C  = ",
+      :D     => "D   ="
+    }
+    column = {:A => 1, :B => 2, :C => 3, :D => 4}
+    # for each letter in order
+    for i in 0..3
+      greater = order[i]
+      j = i
+      # for every letter that goes after this letter
+      # i.e. is left is greater than right
+      until j > 3
+        lesser = order[j]
+
+        #set greater > lesser
+        if greater != lesser
+          #greater > lesser
+          solution[greater.to_sym][column[lesser.to_sym]] = '>'
+          #lesser < greater
+          solution[lesser.to_sym][column[greater.to_sym]] = '<'
+        end
+
+        j += 1
+      end
+
+    end
+
+    answer="\n#{solution[:title]}\n#{solution[:A]}\n#{solution[:B]}\n#{solution[:C]}\n#{solution[:D]}\n"
+  end
+
 end
